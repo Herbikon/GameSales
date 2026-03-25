@@ -84,7 +84,6 @@ python manage.py runserver
 
 ## Структура проекта
 
-\`\`\`
 GameSales/
 ├── .gitignore              # Игнорируемые файлы
 ├── .env                    # Переменные окружения
@@ -110,7 +109,7 @@ GameSales/
 │   └── migrations/
 ├── venv/                   # Окружение
 └── templates/              # Шаблоны
-\`\`\`
+
 
 ## Команды для разработки
 
@@ -126,7 +125,7 @@ python manage.py startapp app_name apps/app_name
 python manage.py collectstatic
 \`\`\`
 
-## 📄 Лицензия
+## Лицензия
 
 MIT
 
