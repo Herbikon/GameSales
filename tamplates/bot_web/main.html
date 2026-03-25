@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Bot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .chat-header {
+            background: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        .user-message {
+            background: #e3f2fd;
+            margin-left: auto;
+            text-align: right;
+        }
+        .bot-message {
+            background: #f5f5f5;
+            margin-right: auto;
+        }
+        .controls {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .input-group {
+            grid-column: 1 / -1;
+            display: none;
+        }
+        .input-group.active {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        input, select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🎮 Game Bot</h1>
+            <p>Сайт для поиска дешевых игр</p>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                Добро пожаловать! Выбери что тебе нужно:
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="handleAction('random_game')">🎲 Случайная игра</button>
+            <button onclick="handleAction('count_games')">📊 Количество игр</button>
+            <button onclick="showInput('genre')">🎭 По жанру</button>
+            <button onclick="showInput('developer')">👨‍💻 По разработчику</button>
+            <button onclick="showInput('publisher')">🏢 По издателю</button>
+            <button onclick="showInput('tags')">🏷 По тегу</button>
+            <button onclick="showInput('localization')">🌍 По локализации</button>
+            <button onclick="showAddGameForm()">➕ Добавить игру</button>
+            
+            <div class="input-group" id="filterInput">
+                <input type="text" id="filterValue" placeholder="Введите Название...">
+                <button onclick="submitFilter()">Найти</button>
+            </div>
+            
+            <div class="input-group" id="addGameForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+                    <input type="text" id="gameName" placeholder="Название игры">
+                    <input type="text" id="gameGenre" placeholder="Жанр">
+                    <input type="text" id="gameDeveloper" placeholder="Разработчик">
+                    <input type="text" id="gamePublisher" placeholder="Издатель">
+                    <input type="text" id="gameTags" placeholder="Тег">
+                    <input type="text" id="gameLocalization" placeholder="Локализация">
+                    <button onclick="submitAddGame()" style="grid-column: 1 / -1;">Добавить игру</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAction = '';
+        const chatMessages = document.getElementById('chatMessages');
+        const filterInput = document.getElementById('filterInput');
+        const addGameForm = document.getElementById('addGameForm');
+
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+         function showInput(action) {
+            currentAction = action;
+            filterInput.classList.add('active');
+            addGameForm.classList.remove('active');
+            
+            const labels = {
+                'genre': 'Введите название жанра (например: Action):',
+                'developer': 'Введите название разработчика (например: Team Cherry):',
+                'publisher': 'Введите название издателя (например: 505 Games):',
+                'tags': 'Введите название тега (например: Метроидвания):',
+                'localization': 'Введите тип локализации (например: Полная):'
+            };
+            
+            document.getElementById('filterValue').placeholder = labels[action] || 'Введите значение...';
+            document.getElementById('filterValue').value = '';
+        }
+
+        function showAddGameForm() {
+            filterInput.classList.remove('active');
+            addGameForm.classList.add('active');
+        }
+
+        function handleAction(action) {
+            currentAction = action;
+            sendRequest(action);
+        }
+
+        function submitFilter() {
+            const value = document.getElementById('filterValue').value;
+            if (!value) {
+                alert('Пожалуйста, введите значение');
+                return;
+            }
+            sendRequest(currentAction, value);
+            filterInput.classList.remove('active');
+            document.getElementById('filterValue').value = '';
+        }
+
+        function submitAddGame() {
+            const gameData = {
+                name: document.getElementById('gameName').value,
+                genre: document.getElementById('gameGenre').value,
+                developer: document.getElementById('gameDeveloper').value,
+                publisher: document.getElementById('gamePublisher').value,
+                tags: document.getElementById('gameTags').value,
+                localization: document.getElementById('gameLocalization').value
+            };
+            
+            for (let key in gameData) {
+                if (!gameData[key]) {
+                    alert('Пожалуйста, заполните все поля');
+                    return;
+                }
+            }
+            
+            sendRequest('add_game', gameData);
+            addGameForm.classList.remove('active');
+            
+
+            document.querySelectorAll('#addGameForm input').forEach(input => input.value = '');
+        }
+
+        function sendRequest(type, value = null) {
+            addMessage('user', getActionLabel(type, value));
+            
+            fetch('/api/message/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    type: type,
+                    value: value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage('bot', data.response);
+            })
+            .catch(error => {
+                addMessage('bot', 'Ошибка соединения с сервером');
+            });
+        }
+
+
+        function getActionLabel(type, value) {
+            const labels = {
+                'random_game': '🎲 Получить случайную игру',
+                'count_games': '📊 Узнать количество игр',
+                'genre': `🎭 Поиск по жанру (ID: ${value})`,
+                'developer': `👨‍💻 Поиск по разработчику (ID: ${value})`,
+                'publisher': `🏢 Поиск по издателю (ID: ${value})`,
+                'tags': `🏷 Поиск по тегу (ID: ${value})`,
+                'localization': `🌍 Поиск по локализации (ID: ${value})`,
+                'add_game': '➕ Добавить новую игру'
+            };
+            return labels[type] || type;
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
